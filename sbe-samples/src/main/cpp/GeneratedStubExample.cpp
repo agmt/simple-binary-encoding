@@ -19,12 +19,14 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <iomanip>
+#include <chrono>
 
 #include "baseline/MessageHeader.h"
 #include "baseline/Car.h"
 
 using namespace std;
 using namespace baseline;
+using namespace std::chrono;
 
 #if defined(WIN32) || defined(_WIN32)
 #    define snprintf _snprintf
@@ -62,7 +64,7 @@ std::size_t decodeHdr(MessageHeader &hdr, char *buffer, std::uint64_t offset, st
     return hdr.encodedLength();
 }
 
-std::size_t encodeCar(Car &car, char *buffer, std::uint64_t offset, std::uint64_t bufferLength)
+inline std::size_t encodeCar(Car &car, char *buffer, std::uint64_t offset, std::uint64_t bufferLength)
 {
     car.wrapForEncode(buffer, offset, bufferLength)
        .serialNumber(1234)
@@ -122,6 +124,25 @@ std::size_t encodeCar(Car &car, char *buffer, std::uint64_t offset, std::uint64_
         .putActivationCode("deadbeef", 8);
 
     return car.encodedLength();
+}
+
+__attribute__((noinline)) std::size_t encodeCarOrig(Car &car, char *buffer, std::uint64_t offset, std::uint64_t bufferLength)
+{
+    return encodeCar(car, buffer, offset, bufferLength);
+}
+
+__attribute__((noinline)) std::size_t encodeCarLocal(Car &car, char *buffer, std::uint64_t offset, std::uint64_t bufferLength)
+{
+    (void)car;
+    Car _car;
+    return encodeCar(_car, buffer, offset, bufferLength);
+}
+
+__attribute__((noinline)) std::size_t encodeCarLocalAligned(Car &car, char *buffer, std::uint64_t offset, std::uint64_t bufferLength)
+{
+    Car _car;
+    buffer = (char*)__builtin_assume_aligned(buffer, 64);
+    return encodeCar(_car, buffer, MessageHeader::encodedLength(), 2048);
 }
 
 
@@ -304,11 +325,35 @@ int main(int argc, const char* argv[])
     char buffer[2048];
     MessageHeader hdr;
     Car car;
+    high_resolution_clock::time_point st, en;
 
     std::size_t encodeHdrLength = encodeHdr(hdr, car, buffer, 0, sizeof(buffer));
     std::size_t encodeMsgLength = encodeCar(car, buffer, hdr.encodedLength(), sizeof(buffer));
 
+    st = high_resolution_clock::now();
+    for (int i = 0; i < 10000000; i++) {
+        encodeMsgLength = encodeCarOrig(car, buffer, hdr.encodedLength(), sizeof(buffer));
+    }
+    en = high_resolution_clock::now();
+    cout << "Orig       : " << duration<double>(en-st).count() << endl;
+
+    st = high_resolution_clock::now();
+    for (int i = 0; i < 10000000; i++) {
+        encodeMsgLength = encodeCarLocal(car, buffer, hdr.encodedLength(), sizeof(buffer));
+    }
+    en = high_resolution_clock::now();
+    cout << "Local      : " << duration<double>(en-st).count() << endl;
+
+    st = high_resolution_clock::now();
+    for (int i = 0; i < 10000000; i++) {
+        encodeMsgLength = encodeCarLocalAligned(car, buffer, hdr.encodedLength(), sizeof(buffer));
+    }
+    en = high_resolution_clock::now();
+    cout << "Loc&aligned: " << duration<double>(en-st).count() << endl;
+ 
     cout << "Encoded Lengths are " << encodeHdrLength << " + " << encodeMsgLength << endl;
+    
+    return 0;
 
     std::size_t decodeHdrLength = decodeHdr(hdr, buffer, 0, sizeof(buffer));
     std::size_t decodeMsgLength = decodeCar(car, buffer, hdr.encodedLength(), hdr.blockLength(), hdr.version(), sizeof(buffer));

@@ -558,7 +558,7 @@ public class CppGenerator implements CodeGenerator
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
                 indent + "        std::uint64_t pos = sbePosition();\n" +
-                indent + "        const std::string result(m_buffer + pos, dataLength);\n" +
+                indent + "        std::string result(m_buffer + pos, dataLength);\n" +
                 indent + "        sbePosition(pos + dataLength);\n" +
                 indent + "        return result;\n" +
                 indent + "    }\n",

@@ -1901,6 +1901,7 @@ public class CppGenerator implements CodeGenerator
         final String schemaIdType = cppTypeName(ir.headerStructure().schemaIdType());
         final String schemaVersionType = cppTypeName(ir.headerStructure().schemaVersionType());
         final String semanticType = token.encoding().semanticType() == null ? "" : token.encoding().semanticType();
+        final String headerName = formatClassName(ir.headerStructure().tokens().get(0).name());
 
         return String.format(
             "private:\n" +
@@ -1932,6 +1933,8 @@ public class CppGenerator implements CodeGenerator
             "        double fp_value;\n" +
             "        std::uint64_t uint_value;\n" +
             "    };\n\n" +
+
+            "    using MessageHeader = %12$s;\n" +
 
             "%11$s" +
             "    SBE_NODISCARD static SBE_CONSTEXPR %1$s sbeBlockLength() SBE_NOEXCEPT\n" +
@@ -2065,7 +2068,8 @@ public class CppGenerator implements CodeGenerator
             generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version())),
             semanticType,
             className,
-            generateConstructorsAndOperators(className));
+            generateConstructorsAndOperators(className),
+            headerName);
     }
 
     private void generateFields(

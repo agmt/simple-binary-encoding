@@ -646,12 +646,12 @@ public class CppGenerator implements CodeGenerator
             characterEncoding);
 
         new Formatter(sb).format("\n" +
-            indent + "    static SBE_CONSTEXPR std::uint64_t %1$sSinceVersion() SBE_NOEXCEPT\n" +
+            indent + "    SBE_NODISCARD static SBE_CONSTEXPR std::uint64_t %1$sSinceVersion() SBE_NOEXCEPT\n" +
             indent + "    {\n" +
             indent + "        return %2$d;\n" +
             indent + "    }\n\n" +
 
-            indent + "    bool %1$sInActingVersion() SBE_NOEXCEPT\n" +
+            indent + "    SBE_NODISCARD bool %1$sInActingVersion() const SBE_NOEXCEPT\n" +
             indent + "    {\n" +
             indent + "#if defined(__clang__)\n" +
             indent + "#pragma clang diagnostic push\n" +
@@ -2129,7 +2129,7 @@ public class CppGenerator implements CodeGenerator
             indent + "        return %2$d;\n" +
             indent + "    }\n\n" +
 
-            indent + "    SBE_NODISCARD bool %1$sInActingVersion() SBE_NOEXCEPT\n" +
+            indent + "    SBE_NODISCARD bool %1$sInActingVersion() const SBE_NOEXCEPT\n" +
             indent + "    {\n" +
             indent + "#if defined(__clang__)\n" +
             indent + "#pragma clang diagnostic push\n" +
